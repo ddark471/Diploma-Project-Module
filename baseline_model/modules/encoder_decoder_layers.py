@@ -49,8 +49,31 @@ class PositionwiseFeedforwardLayer(nn.Module):
         return x
 
 
-class PositionalEncoding(nn.Module):
+# class PositionalEncoding(nn.Module):
+#
+#     def __init__(self, d_hid, n_position=200):
+#         super(PositionalEncoding, self).__init__()
+#
+#         # Not a parameter
+#         self.register_buffer('pos_table', self._get_sinusoid_encoding_table(n_position, d_hid))
+#
+#     def _get_sinusoid_encoding_table(self, n_position, d_hid):
+#         ''' Sinusoid position encoding table '''
+#         # TODO: make it with torch instead of numpy
+#
+#         def get_position_angle_vec(position):
+#             return [position / np.power(10000, 2 * (hid_j // 2) / d_hid) for hid_j in range(d_hid)]
+#
+#         sinusoid_table = np.zeros([get_position_angle_vec(pos_i) for pos_i in range(n_position)])
+#         sinusoid_table[:, 0::2] = np.sin(sinusoid_table[:, 0::2])  # dim 2i
+#         sinusoid_table[:, 1::2] = np.cos(sinusoid_table[:, 1::2])  # dim 2i+1
+#
+#         return torch.FloatTensor(sinusoid_table).unsqueeze(0)
+#
+#     def forward(self, x):
+#         return self.pos_table[:, :x.size(1)].clone().detach()
 
+class PositionalEncoding(nn.Module):
     def __init__(self, d_hid, n_position=200):
         super(PositionalEncoding, self).__init__()
 
@@ -59,19 +82,22 @@ class PositionalEncoding(nn.Module):
 
     def _get_sinusoid_encoding_table(self, n_position, d_hid):
         ''' Sinusoid position encoding table '''
-        # TODO: make it with torch instead of numpy
+        # Create a position index for each row
+        position = torch.arange(0, n_position, dtype=torch.float).unsqueeze(1)
 
-        def get_position_angle_vec(position):
-            return [position / np.power(10000, 2 * (hid_j // 2) / d_hid) for hid_j in range(d_hid)]
+        # Create the divisor term for sinusoid functions
+        div_term = torch.exp(torch.arange(0, d_hid, 2).float() * -(math.log(10000.0) / d_hid))
 
-        sinusoid_table = np.array([get_position_angle_vec(pos_i) for pos_i in range(n_position)])
-        sinusoid_table[:, 0::2] = np.sin(sinusoid_table[:, 0::2])  # dim 2i
-        sinusoid_table[:, 1::2] = np.cos(sinusoid_table[:, 1::2])  # dim 2i+1
+        # Apply sine to even indices, cosine to odd indices
+        sinusoid_table = torch.zeros(n_position, d_hid)
+        sinusoid_table[:, 0::2] = torch.sin(position * div_term)  # dim 2i
+        sinusoid_table[:, 1::2] = torch.cos(position * div_term)  # dim 2i+1
 
-        return torch.FloatTensor(sinusoid_table).unsqueeze(0)
+        return sinusoid_table.unsqueeze(0)  # Add batch dimension
 
     def forward(self, x):
         return self.pos_table[:, :x.size(1)].clone().detach()
+
 
 class MultiHeadAttentionLayer(nn.Module):
     def __init__(self, hid_dim, n_heads, dropout, device):

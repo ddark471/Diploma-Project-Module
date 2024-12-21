@@ -227,7 +227,7 @@ def preprocessing_batch_tmp(src_len, graph, device, type_require=False):
     batch_graph = dgl.batch(batch_g).to(device)
     return batch_graph
 
-def train_eval_tree(args, model, iterator, optimizer, device, \
+def train_eval_tree(args, model, iterator, optimizer, device,
         criterion, dec_seq_length, train_flag=True):
 
     if train_flag:
@@ -243,7 +243,8 @@ def train_eval_tree(args, model, iterator, optimizer, device, \
     batch_graph_tmp = None
     batch_size = args.bsz 
     if args.dist_gpu == True:
-        model = model.module
+        if isinstance(model, nn.DataParallel) or isinstance(model, nn.parallel.DistributedDataParallel):
+            model = model.module
     with torch.set_grad_enabled(train_flag):
         for i, batch in enumerate(iterator):
             dict_info = batch['dict_info']

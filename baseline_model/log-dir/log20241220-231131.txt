@@ -1,0 +1,7 @@
+create file
+Number of training examples: 0
+Number of validation examples: 0
+Number of testing examples: 0
+Unique tokens in source assembly vocabulary: 4 
+Max input length : 0
+Max output length : 0
