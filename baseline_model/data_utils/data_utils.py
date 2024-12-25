@@ -9,8 +9,9 @@ import torch.nn as nn
 
 # from torchtext.datasets import TranslationDataset, Multi30k
 # from torchtext.data import Field, BucketIterator, metrics
-# from torchtext.data.metrics import bleu_score
-# import spacy
+from nltk.translate.bleu_score import corpus_bleu
+from torch.utils.data import random_split
+import spacy
 
 import random, warnings
 import math
@@ -28,13 +29,16 @@ import random
 from tqdm import tqdm
 from sklearn.metrics import *
 import dgl, functools
+import spacy
 
 def split_dataset(src_list, p = 0):
     split_src_list = []
     if p == 0 :
         src_list = [src_list]
     for elem in src_list:
-        src_ = elem.split([0.5,0.5])
+        subset_size = len(elem)
+        split_sizes = [int(0.5 * subset_size), subset_size - int(0.5 * subset_size)]
+        src_, _ = random_split(elem, split_sizes)
         split_src_list += [p for p in src_]
     return split_src_list
 
@@ -59,7 +63,7 @@ def calculate_bleu(data, src_field, trg_field, model, device, max_len = 50):
         pred_trgs.append(pred_trg)
         trgs.append([trg])
 
-    return bleu_score(pred_trgs, trgs)
+    return corpus_bleu(pred_trgs, trgs)
 
 def translate_sentence(sentence, src_field, trg_field, model, device, max_len = 50):
 

@@ -12,7 +12,7 @@ from torchtext.data import Field, RawField, BucketIterator,TabularDataset,Datase
 
 import torch.nn.functional as F
 import spacy
-
+from torch.utils.data import random_split
 import random
 import math
 import os
@@ -33,7 +33,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 from collections import defaultdict 
 
-import resource
+#import resource
 from torch.nn.parallel import DistributedDataParallel
 import torch.distributed as dist
 import torch.multiprocessing as mp
@@ -113,7 +113,7 @@ def main():
         broken_file_flag = 0
         if args.dump_trace:
             dict_info={}
-            for path in glob.glob(os.path.join(args.cache_path,str(i)+'/*')):
+            for path in glob.glob(os.path.join(r"C:\Users\satoshi_khd\Desktop\nbref\data\re\cache_tst_asm_1", "**/*"), recursive=True):
                 if os.path.getsize(path) > 0:
                     with open(path, 'rb') as f:
                         dict_info[path] = pickle.load(f)
@@ -140,12 +140,17 @@ def main():
             max_len_trg = len_elem_trg + 2
 
     data_sets = Dataset(exp_list,fields = [('src',SRC),('trg',TRG), ('id', ID), ('dict_info', DICT_INFO), ('graphs_asm', GRAPHS_ASM), ('src_len', NODE_NUM)])
-    trn, tst, vld = data_sets.split([0.8,0.15,0.05])
+    dataset_size = len(data_sets)
+    train_size = int(0.8 * dataset_size)
+    val_size = int(0.05 * dataset_size)
+    test_size = dataset_size - train_size - val_size
+
+    trn, vld, tst = random_split(data_sets, [train_size, val_size, test_size])
     SRC.build_vocab(trn, min_freq = 2)
     #
-    print("Number of training examples: %d" % (len(trn.examples)))
-    print("Number of validation examples: %d" % (len(vld.examples)))
-    print("Number of testing examples: %d" % (len(tst.examples)))
+    print("Number of training examples: %d" % (len(trn)))
+    print("Number of validation examples: %d" % (len(vld)))
+    print("Number of testing examples: %d" % (len(tst)))
     print("Unique tokens in source assembly vocabulary: %d "%(len(SRC.vocab)))
     print("Max input length : %d" % (max_len_src))
     print("Max output length : %d" % (max_len_trg))

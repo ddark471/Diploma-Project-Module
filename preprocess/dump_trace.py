@@ -7,10 +7,11 @@ import torch
 import pdb
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data import random_split
 
 from torchtext.datasets import TranslationDataset, Multi30k
 from torchtext.data import Field, RawField, BucketIterator,TabularDataset,Dataset,Example
-from torchtext.data.metrics import bleu_score
+from nltk.translate.bleu_score import corpus_bleu
 
 import torch.nn.functional as F
 import random
@@ -31,7 +32,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 from collections import defaultdict 
 
-import resource
+#import resource
 from torch.nn.parallel import DistributedDataParallel
 
 def main():
@@ -77,11 +78,15 @@ def main():
         if len_elem_trg >= max_len_trg:
             max_len_trg = len_elem_trg + 2
     data_sets = Dataset(exp_list,fields = [('src',SRC),('trg',TRG), ('id', ID), ('dict_info', DICT_INFO)])
-    trn, vld = data_sets.split([0.8,0.2,0.0])
+    # trn, vld = data_sets.split([0.8,0.2,0.0])
+    dataset_size = len(data_sets)
+    trn_size = int(0.8 * dataset_size)
+    vld_size = int(0.2 * dataset_size)
+    trn, vld = random_split(data_sets, [trn_size, vld_size])
     SRC.build_vocab(trn, min_freq = 2)
 
-    print("Number of training examples: %d" % (len(trn.examples)))
-    print("Number of validation examples: %d" % (len(vld.examples)))
+    print("Number of training examples: %d" % (len(trn)))
+    print("Number of validation examples: %d" % (len(vld)))
     print("Unique tokens in source assembly vocabulary: %d "%(len(SRC.vocab)))
     print("Max input length : %d" % (max_len_src))
     print("Max output length : %d" % (max_len_trg))
